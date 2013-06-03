@@ -9,7 +9,11 @@ use POSIX qw(strftime);
 use Date::Parse;
 use JSON qw( decode_json encode_json );
 use Data::Dumper;
+use Path::Class;
+use Net::FTP;
 
+print "Enter FTP password: ";
+chomp( my $ftpPassword = <> );
 
 # Create a user agent object
 #  use LWP::UserAgent;
@@ -34,7 +38,7 @@ my @locationList = ( "47.41,-121.405833,11,466", #snoqualmie
 my $sleep = 1; #first time through run right away
 	
 while ( sleep( $sleep ) ) {
-	$sleep = 300000;
+	$sleep = 1200;
 
 	my $now_string = localtime;
 
@@ -57,24 +61,48 @@ while ( sleep( $sleep ) ) {
 		print "${forecastURL}\n";
 		my $res = $ua->request($forecastReq);
 	
-		my @weather;
+		my %weatherHash;
 		
 	  	if ($res->is_success) {
 			my $decoded_json = decode_json( $res->content );
 			my $forecastJson = $decoded_json->{"daily"}->{"data"};
+			my @weather;
 	    	for my $forecastItem (@$forecastJson) {
-	    		my %dayHash = (
-			        'date'=> $forecastItem->{"time"},
-			        'icon'=> $forecastItem->{"icon"},
-			        'min'=> $forecastItem->{"temperatureMin"},
-			        'max'=> $forecastItem->{"temperatureMax"},
-			        'wind'=> $forecastItem->{"windSpeed"},
-			        'windBearing'=> $forecastItem->{"windBearing"},
-			        'visibility'=> $forecastItem->{"visibility"},
-			        'text'=> $forecastItem->{"summary"}
-			    );
-			    push(@weather, \%dayHash);
+	    		my $forecastTime = strftime("%a, %e %b %Y %H:%M:%S %z", localtime($forecastItem->{"time"}));
+	    		my @day = (
+		    		{
+		    			"header" => strftime("%A", localtime($forecastItem->{"time"})),
+		    			"text" => $forecastItem->{"summary"}	    			
+		    		},
+		    		{
+		    			"header" => "High",
+		    			"text" => $forecastItem->{"temperatureMax"}	    			
+		    		},
+		    		{
+		    			"header" => "Low",
+		    			"text" => $forecastItem->{"temperatureMin"}	    			
+		    		},
+		    		{
+		    			"header" => "Wind",
+		    			"text" => $forecastItem->{"windSpeed"} . " from " . $forecastItem->{"windBearing"}  			
+		    		}
+	    		);
+#	    		my %dayHash = (
+#			        'date'=> $forecastTime,
+#			        'icon'=> $forecastItem->{"icon"},
+#			        'min'=> $forecastItem->{"temperatureMin"},
+#			        'max'=> $forecastItem->{"temperatureMax"},
+#			        'wind'=> $forecastItem->{"windSpeed"},
+#			        'windBearing'=> $forecastItem->{"windBearing"},
+#			        'visibility'=> $forecastItem->{"visibility"},
+#			        'text'=> $forecastItem->{"summary"}
+#			    );
+			    push(@weather, \@day);
 			}
+			%weatherHash = (
+				"title" => "Weather",
+				"tabs" => \@weather
+			)
 	  	}
 	               
 	# the wunderground version
@@ -121,13 +149,31 @@ while ( sleep( $sleep ) ) {
 			    				"text" => $passItem->{"RestrictionTwo"}->{"RestrictionText"}
 			    			}
 					);
+					my @body = (
+							{
+				    			"header" => $passItem->{"MountainPassName"},
+				    			"text" => $passItem->{"RoadCondition"}
+							},
+			    			{
+				    			"header" => $passItem->{"RestrictionOne"}->{"TravelDirection"},
+				    			"text" => $passItem->{"RestrictionOne"}->{"RestrictionText"}
+			    			},
+			    			{
+				    			"header" => $passItem->{"RestrictionTwo"}->{"TravelDirection"},
+				    			"text" => $passItem->{"RestrictionTwo"}->{"RestrictionText"}
+			    			}
+			    		);
 		    		%trafficHash = (
-		    			'name' => $passItem->{"MountainPassName"},
-		    			'summary' => $passItem->{"RoadCondition"},
-		    			'weather' => $passItem->{"WeatherCondition"},
-		    			'temp' => $passItem->{"TemperatureInFahrenheit"},
-		    			'directions' => \@directions
+		    			"title" => "Roads",
+		    			"body" => \@body
 		    		);
+#		    		%trafficHash = (
+#		    			'name' => $passItem->{"MountainPassName"},
+#		    			'summary' => $passItem->{"RoadCondition"},
+#		    			'weather' => $passItem->{"WeatherCondition"},
+#		    			'temp' => $passItem->{"TemperatureInFahrenheit"},
+#		    			'directions' => \@directions
+#		    		);
 				}
 			}
 	  	}
@@ -145,15 +191,38 @@ while ( sleep( $sleep ) ) {
 			my $data = $xml->XMLin($onthesnowRes->content);
 			foreach my $item (@{$data->{channel}->{item}}) {
 				if ( $item->{'ots:resort_id'} == $onthesnowId ) {
+#		    		%conditionsHash = (
+#				        'date' => $item->{"pubDate"},
+#				        'description' => $item->{"description"},
+#				        'base' => $item->{"ots:base_depth"},
+#				        'recent' => $item->{"ots:snowfall_48hr"},
+#				        'surface' => $item->{"ots:surface_condition"},
+#				        'metric' => $item->{"ots:base_depth_metric"},
+#				        'status' => $item->{"ots:open_staus"}
+#				    );
+					my @body = (
+							{
+				    			"header" => "Status",
+				    			"text" => $item->{"ots:open_staus"}
+							},
+			    			{
+				    			"header" => "Base",
+				    			"text" => $item->{"ots:base_depth"}
+			    			},
+			    			{
+				    			"header" => "Last 48 hours",
+				    			"text" => $item->{"ots:snowfall_48hr"}
+			    			},
+			    			{
+				    			"header" => "Last update",
+				    			"text" => $item->{"pubDate"}
+							}
+			    		);
+					
 		    		%conditionsHash = (
-				        'date' => $item->{"pubDate"},
-				        'description' => $item->{"description"},
-				        'base' => $item->{"ots:base_depth"},
-				        'recent' => $item->{"ots:snowfall_48hr"},
-				        'surface' => $item->{"ots:surface_condition"},
-				        'metric' => $item->{"ots:base_depth_metric"},
-				        'status' => $item->{"ots:open_staus"}
-				    );
+		    			"title" => "Conditions",
+		    			"body" => \@body
+		    		);
 				    $name = $item->{"title"};
 				}
 			}
@@ -162,12 +231,27 @@ while ( sleep( $sleep ) ) {
 			'name' => $name,
 	        'conditions' => \%conditionsHash,
 	        'traffic' => \%trafficHash,
-	        'weather' => \@weather
+	        'weather' => \%weatherHash
 	    );
 		push(@output, \%resortComplete);
 	}
 	my $json_text = encode_json(\@output);
 	print "$json_text\n";
+
+	#http://perldoc.perl.org/Net/FTP.html
+    my $ftp = Net::FTP->new("ftp.talismith.com", Debug => 0)
+      or die "Cannot connect: $@";
+    $ftp->login("robtali",$ftpPassword)
+      or die "Cannot login: ", $ftp->message;
+    $ftp->cwd("/public_html/cascade")
+      or die "Cannot change working directory: ", $ftp->message;
+
+	open(my $FH, "<", \$json_text)
+		or die "Cannot open file handle";
+	$ftp->put($FH, "data.json")
+		or die "CAnnot write file: ", $ftp->message;
+
+    $ftp->quit;
 }
 
   
