@@ -12,6 +12,7 @@ use Data::Dumper;
 use Path::Class;
 use Net::FTP;
 
+
 print "Enter FTP password: ";
 chomp( my $ftpPassword = <> );
 
@@ -26,24 +27,31 @@ my $wunderkey = "9d0379aadbc4d2fa";
 my $forecastkey = "df995b53b3e151f1ff78ff56c6815bad";
 my $traffickey = "8c629dd7-e525-4846-adcc-682d55d892e8";
 
-my @locationList = ( "47.41,-121.405833,11,466", #snoqualmie
-			"46.935642,-121.474807,5,124", #crystal
-			"47.745095,-121.091065,10,427", #stevens
-			"48.862259,-121.678397,6,266", #baker
-			"47.443647,-121.427819,11,804", #alpental
-			"46.638358,-121.390135,12,494" #white
+my @locationList = ( "47.41,-121.405833,11,466,Summit at Snoqualmie", #snoqualmie
+			"46.935642,-121.474807,5,124,Crystal Mountain", #crystal
+			"47.745095,-121.091065,10,427,Stevens Pass", #stevens
+			"48.862259,-121.678397,6,266,Mt. Baker", #baker
+			"47.443647,-121.427819,11,804,Alpental", #alpental
+			"46.638358,-121.390135,12,494,White Pass" #white
 );
 	# locationString - latitude,longitude,traffic id, onethsnow id
 
 my $sleep = 1; #first time through run right away
 	
 while ( sleep( $sleep ) ) {
-	$sleep = 1200;
+	$sleep = 1200; #update the server every 20 minutes
 
-	my $now_string = localtime;
-
-	print "$now_string\n";
 	my @output;
+
+	my $onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
+	my $onthesnowReq = HTTP::Request->new(GET => $onthesnowURL);
+	my $onthesnowRes = $ua->request($onthesnowReq);
+	print "${onthesnowURL}\n";
+
+	my $trafficURL = "http://www.wsdot.wa.gov/Traffic/api/MountainPassConditions/MountainPassConditionsREST.svc/GetMountainPassConditionsAsJson?AccessCode=${traffickey}";
+	my $trafficReq = HTTP::Request->new(GET => $trafficURL);
+	my $trafficRes = $ua->request($trafficReq);
+	print "${trafficURL}\n";
 	
 	foreach my $locationString (@locationList) {
 		my @locationInfo = split(',',$locationString);
@@ -52,6 +60,7 @@ while ( sleep( $sleep ) ) {
 		my $longitude = $locationInfo[1];
 		my $trafficId = $locationInfo[2];
 		my $onthesnowId = $locationInfo[3];
+		my $name = $locationInfo[4];
 	
 		# https://api.forecast.io/forecast/df995b53b3e151f1ff78ff56c6815bad/37.8267,-122.423
 		# http://graphical.weather.gov/xml/rest.php
@@ -69,22 +78,42 @@ while ( sleep( $sleep ) ) {
 			my @weather;
 	    	for my $forecastItem (@$forecastJson) {
 	    		my $forecastTime = strftime("%a, %e %b %Y %H:%M:%S %z", localtime($forecastItem->{"time"}));
+	    		my $wind;
+	    		if ( $forecastItem->{"windBearing"} ) {
+		    		$wind = windFormat( $forecastItem->{"windSpeed"}, $forecastItem->{"windBearing"} );
+	    		} else {
+	    			$wind = "";
+	    		}
+	    		#clear-day, 
+#	    		clear-night, 
+#	    		rain, 
+#	    		snow, 
+#	    		sleet, 
+#	    		wind, 
+#	    		fog, 
+#	    		cloudy, 
+#	    		partly-cloudy-day, or 
+#	    		partly-cloudy-night
+	    		my $icon = "icons/" . $forecastItem->{"icon"} . ".png";
 	    		my @day = (
 		    		{
-		    			"header" => strftime("%A", localtime($forecastItem->{"time"})),
-		    			"text" => $forecastItem->{"summary"}	    			
+		    			"icon" => $icon
+		    		},
+		    		{
+		    			"header" => strftime("%a, %b %e", localtime($forecastItem->{"time"})),
+		    			"text" => $forecastItem->{"summary"}
 		    		},
 		    		{
 		    			"header" => "High",
-		    			"text" => $forecastItem->{"temperatureMax"}	    			
+		    			"text" => sprintf("%i", $forecastItem->{"temperatureMax"} ) . " F"
 		    		},
 		    		{
 		    			"header" => "Low",
-		    			"text" => $forecastItem->{"temperatureMin"}	    			
+		    			"text" => sprintf("%i", $forecastItem->{"temperatureMin"} ) . " F"
 		    		},
 		    		{
 		    			"header" => "Wind",
-		    			"text" => $forecastItem->{"windSpeed"} . " from " . $forecastItem->{"windBearing"}  			
+		    			"text" => $wind
 		    		}
 	    		);
 #	    		my %dayHash = (
@@ -101,7 +130,7 @@ while ( sleep( $sleep ) ) {
 			}
 			%weatherHash = (
 				"title" => "Weather",
-				"tabs" => \@weather
+				"tabs" => \@weather,
 			)
 	  	}
 	               
@@ -128,10 +157,6 @@ while ( sleep( $sleep ) ) {
 	
 		# http://www.wsdot.wa.gov/Traffic/api/MountainPassConditions/MountainPassConditionsREST.svc/GetMountainPassConditionsAsJson?AccessCode={ACCESSCODE}
 	
-		my $trafficURL = "http://www.wsdot.wa.gov/Traffic/api/MountainPassConditions/MountainPassConditionsREST.svc/GetMountainPassConditionsAsJson?AccessCode=${traffickey}";
-		my $trafficReq = HTTP::Request->new(GET => $trafficURL);
-		my $trafficRes = $ua->request($trafficReq);
-		print "${trafficURL}\n";
 		my %trafficHash = ();
 		
 	  	if ($trafficRes->is_success) {
@@ -180,12 +205,7 @@ while ( sleep( $sleep ) ) {
 	
 	# http://www.onthesnow.com/washington/snow-rss.html
 	# http://www.onthesnow.com/ots/webservice_tools/OTSWebService2009.html
-		my $onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
-		my $onthesnowReq = HTTP::Request->new(GET => $onthesnowURL);
-		my $onthesnowRes = $ua->request($onthesnowReq);
-		print "${onthesnowURL}\n";
 		my %conditionsHash = ();
-		my $name;
 	
 	  	if ($onthesnowRes->is_success) {
 			my $data = $xml->XMLin($onthesnowRes->content);
@@ -223,7 +243,6 @@ while ( sleep( $sleep ) ) {
 		    			"title" => "Conditions",
 		    			"body" => \@body
 		    		);
-				    $name = $item->{"title"};
 				}
 			}
 	  	}
@@ -249,9 +268,38 @@ while ( sleep( $sleep ) ) {
 	open(my $FH, "<", \$json_text)
 		or die "Cannot open file handle";
 	$ftp->put($FH, "data.json")
-		or die "CAnnot write file: ", $ftp->message;
+		or die "Cannot write file: ", $ftp->message;
 
     $ftp->quit;
+
+	my $now_string = localtime;
+
+	print "$now_string\n";
 }
 
+
   
+sub windFormat{
+    my($windspeed, $direction);    
+    ($windspeed, $direction) = @_;
+  
+	if ( $direction < 22.5 or $direction > 337.5  ) {
+		$direction = "N";
+	} elsif ( $direction < 67.5 ) {
+		$direction = "NE";
+	} elsif ( $direction < 112.5 ) {
+		$direction = "E";
+	} elsif ( $direction < 157.5 ) {
+		$direction = "SE";
+	} elsif ( $direction < 202.5 ) {
+		$direction = "S";
+	} elsif ( $direction < 247.5 ) {
+		$direction = "SW";
+	} elsif ( $direction < 292.5 ) {
+		$direction = "W";
+	} elsif ( $direction < 337.5 ) {
+		$direction = "NW";
+	}
+	
+	return sprintf("%i", $windspeed) . " mph from " . $direction;
+}
