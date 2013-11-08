@@ -245,7 +245,10 @@ while ( sleep( $sleep ) ) {
 	    );
 		push(@output, \%resortComplete);
 	}
-	my $json_text = encode_json(\@output);
+	my %resultJson = (
+		'resorts' => \@output
+	);
+	my $json_text = encode_json(\%resultJson);
 	print "$json_text\n";
 
 	#http://perldoc.perl.org/Net/FTP.html
