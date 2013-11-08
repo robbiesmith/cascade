@@ -84,16 +84,6 @@ while ( sleep( $sleep ) ) {
 	    		} else {
 	    			$wind = "";
 	    		}
-	    		#clear-day, 
-#	    		clear-night, 
-#	    		rain, 
-#	    		snow, 
-#	    		sleet, 
-#	    		wind, 
-#	    		fog, 
-#	    		cloudy, 
-#	    		partly-cloudy-day, or 
-#	    		partly-cloudy-night
 	    		my $icon = "icons/" . $forecastItem->{"icon"} . ".png";
 	    		my @day = (
 		    		{
@@ -116,16 +106,6 @@ while ( sleep( $sleep ) ) {
 		    			"text" => $wind
 		    		}
 	    		);
-#	    		my %dayHash = (
-#			        'date'=> $forecastTime,
-#			        'icon'=> $forecastItem->{"icon"},
-#			        'min'=> $forecastItem->{"temperatureMin"},
-#			        'max'=> $forecastItem->{"temperatureMax"},
-#			        'wind'=> $forecastItem->{"windSpeed"},
-#			        'windBearing'=> $forecastItem->{"windBearing"},
-#			        'visibility'=> $forecastItem->{"visibility"},
-#			        'text'=> $forecastItem->{"summary"}
-#			    );
 			    push(@weather, \@day);
 			}
 			%weatherHash = (
@@ -220,6 +200,17 @@ while ( sleep( $sleep ) ) {
 #				        'metric' => $item->{"ots:base_depth_metric"},
 #				        'status' => $item->{"ots:open_staus"}
 #				    );
+					my $pubtime = $item->{"pubDate"};
+					$pubtime = str2time($pubtime);
+					if($pubtime) {
+						$pubtime = strftime("%a, %b %e %r", localtime($pubtime));
+					} else {
+						$pubtime="N/A";
+					}
+#					my $time;
+#					$time = Time::Piece->strptime($pubtime, "%a, %e %b %Y %H:%M:%S %z")
+#						or $time = $pubtime;
+#					die;
 					my @body = (
 							{
 				    			"header" => "Status",
@@ -235,12 +226,12 @@ while ( sleep( $sleep ) ) {
 			    			},
 			    			{
 				    			"header" => "Last update",
-				    			"text" => $item->{"pubDate"}
+				    			"text" => $pubtime
 							}
 			    		);
 					
 		    		%conditionsHash = (
-		    			"title" => "Conditions",
+		    			"title" => "Snow",
 		    			"body" => \@body
 		    		);
 				}
