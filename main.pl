@@ -39,7 +39,7 @@ my @locationList = ( "47.41,-121.405833,11,466,Summit at Snoqualmie", #snoqualmi
 my $sleep = 1; #first time through run right away
 	
 while ( sleep( $sleep ) ) {
-	$sleep = 1200; #update the server every 20 minutes
+	$sleep = 7200; #update the server every 120 minutes
 
 	my @output;
 
@@ -84,7 +84,7 @@ while ( sleep( $sleep ) ) {
 	    		} else {
 	    			$wind = "";
 	    		}
-	    		my $icon = "icons/" . $forecastItem->{"icon"} . ".png";
+	    		my $icon = "http://snowcascades.com/cascade/icons/" . $forecastItem->{"icon"} . ".png";
 	    		my @day = (
 		    		{
 		    			"icon" => $icon
