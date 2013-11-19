@@ -27,12 +27,12 @@ my $wunderkey = "9d0379aadbc4d2fa";
 my $forecastkey = "df995b53b3e151f1ff78ff56c6815bad";
 my $traffickey = "8c629dd7-e525-4846-adcc-682d55d892e8";
 
-my @locationList = ( "47.41,-121.405833,11,466,Summit at Snoqualmie", #snoqualmie
-			"46.935642,-121.474807,5,124,Crystal Mountain", #crystal
-			"47.745095,-121.091065,10,427,Stevens Pass", #stevens
-			"48.862259,-121.678397,6,266,Mt. Baker", #baker
-			"47.443647,-121.427819,11,804,Alpental", #alpental
-			"46.638358,-121.390135,12,494,White Pass" #white
+my @locationList = ( "47.41,-121.405833,11,466,Summit at Snoqualmie,summit.gif", #snoqualmie
+			"46.935642,-121.474807,5,124,Crystal Mountain,crystal.jpg", #crystal
+			"47.745095,-121.091065,10,427,Stevens Pass,stevens.gif", #stevens
+			"48.862259,-121.678397,6,266,Mt. Baker,baker.gif", #baker
+			"47.443647,-121.427819,11,804,Alpental,alpental.jpg", #alpental
+			"46.638358,-121.390135,12,494,White Pass,whitepass.gif" #white
 );
 	# locationString - latitude,longitude,traffic id, onethsnow id
 
@@ -61,6 +61,7 @@ while ( sleep( $sleep ) ) {
 		my $trafficId = $locationInfo[2];
 		my $onthesnowId = $locationInfo[3];
 		my $name = $locationInfo[4];
+		my $logo = $locationInfo[5];
 	
 		# https://api.forecast.io/forecast/df995b53b3e151f1ff78ff56c6815bad/37.8267,-122.423
 		# http://graphical.weather.gov/xml/rest.php
@@ -239,6 +240,7 @@ while ( sleep( $sleep ) ) {
 	  	}
 		my %resortComplete = (
 			'name' => $name,
+			'logo' => "http://snowcascades.com/cascade/icons/" . $logo,
 	        'conditions' => \%conditionsHash,
 	        'traffic' => \%trafficHash,
 	        'weather' => \%weatherHash
