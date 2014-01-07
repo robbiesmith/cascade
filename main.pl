@@ -76,8 +76,44 @@ while ( sleep( $sleep ) ) {
 	  	if ($res->is_success) {
 			my $decoded_json = decode_json( $res->content );
 			my $forecastJson = $decoded_json->{"daily"}->{"data"};
+			my $currentJson = $decoded_json->{"currently"};
 			my @weather;
-	    	for my $forecastItem (@$forecastJson) {
+    		my $wind;
+    		if ( $currentJson->{"windBearing"} ) {
+	    		$wind = windFormat( $currentJson->{"windSpeed"}, $currentJson->{"windBearing"} );
+    		} else {
+    			$wind = "";
+    		}
+    		my $icon = "http://snowcascades.com/cascade/icons/" . $currentJson->{"icon"} . ".png";
+			my $pubtime = $currentJson->{"time"};
+			if($pubtime) {
+				$pubtime = strftime("%a, %b %e %l:%M %p", localtime($pubtime));
+			} else {
+				$pubtime="N/A";
+			}
+    		my @current = (
+	    		{
+	    			"icon" => $icon
+	    		},
+	    		{
+	    			"header" => "Current conditions",
+	    			"text" => $currentJson->{"summary"}
+	    		},
+	    		{
+	    			"header" => "Temperature",
+	    			"text" => sprintf("%i", $currentJson->{"temperature"} ) . " F"
+	    		},
+	    		{
+	    			"header" => "Wind",
+	    			"text" => $wind
+	    		},
+    			{
+	    			"header" => "Last update",
+	    			"text" => $pubtime
+				}
+    		);
+			push(@weather, \@current);
+			for my $forecastItem (@$forecastJson) {
 	    		my $forecastTime = strftime("%a, %e %b %Y %H:%M:%S %z", localtime($forecastItem->{"time"}));
 	    		my $wind;
 	    		if ( $forecastItem->{"windBearing"} ) {
@@ -208,7 +244,7 @@ while ( sleep( $sleep ) ) {
 					my $pubtime = $item->{"pubDate"};
 					$pubtime = str2time($pubtime);
 					if($pubtime) {
-						$pubtime = strftime("%a, %b %e %r", localtime($pubtime));
+						$pubtime = strftime("%a, %b %e %l:%M %p", localtime($pubtime));
 					} else {
 						$pubtime="N/A";
 					}
@@ -254,15 +290,19 @@ while ( sleep( $sleep ) ) {
 		my @body = (
 				{
 	    			"header" => "Weather",
-	    			"text" => "Data courtesy Forecast.io. Used by permission."
+	    			"text" => "Weather data courtesy Forecast.io. Used by permission.",
+	    			"linktext" => "Forecast.io",
+	    			"link" => "http://www.forecast.io"
  				},
     			{
 	    			"header" => "Traffic",
-	    			"text" => "Data courtesy Washington State Department of Transportation. Used by permission."
+	    			"text" => "Pass traffic data courtesy Washington State Department of Transportation. Used by permission."
     			},
     			{
 	    			"header" => "Snow",
-	    			"text" => "Data courtesy Myweather2.com. Used by permission."
+	    			"text" => "Snow conditions data courtesy Myweather2.com. Used by permission.",
+	    			"linktext" => "MyWeather2.com",
+	    			"link" => "http://www.myweather2.com"
 				}
     		);
 		my @about = (
