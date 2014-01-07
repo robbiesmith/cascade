@@ -186,6 +186,10 @@ while ( sleep( $sleep ) ) {
 	
 	# http://www.onthesnow.com/washington/snow-rss.html
 	# http://www.onthesnow.com/ots/webservice_tools/OTSWebService2009.html
+	
+	# http://www.myweather2.com/developer/weather.ashx?uac=wtSAzBFQ8t&uref=69931fe1-463b-4de8-9f46-00f2da8ddaec
+	# http://www.snocountry.com/ski-reports/washington
+	
 		my %conditionsHash = ();
 	
 	  	if ($onthesnowRes->is_success) {
@@ -247,6 +251,53 @@ while ( sleep( $sleep ) ) {
 	    );
 		push(@output, \%resortComplete);
 	}
+		my @body = (
+				{
+	    			"header" => "Weather",
+	    			"text" => "Data courtesy Forecast.io. Used by permission."
+ 				},
+    			{
+	    			"header" => "Traffic",
+	    			"text" => "Data courtesy Washington State Department of Transportation. Used by permission."
+    			},
+    			{
+	    			"header" => "Snow",
+	    			"text" => "Data courtesy Myweather2.com. Used by permission."
+				}
+    		);
+		my @about = (
+				{
+	    			"header" => "Developed by",
+	    			"text" => "Rob Smith"
+ 				},
+    			{
+	    			"header" => "Get the app",
+	    			"text" => "SnowCascades is now available for iPhone and iPad. Find it on the App Store."
+ 				},
+    			{
+	    			"header" => "Check us out",
+	    			"text" => "Look for SnowCascades on Facebook and Twitter."
+    			}
+    		);
+
+    my %dataHash = (
+    	"title" => "Data",
+    	"body" => \@body
+    );
+
+    my %moreHash = (
+    	"title" => "More",
+    	"body" => \@about
+    );
+
+	my %about = (
+		'name' => 'About',
+		'logo' => "http://snowcascades.com/cascade/icons/Snowflake-icon.png",
+        'conditions' => \%dataHash,
+        'traffic' => \%moreHash
+	);
+	push(@output, \%about);
+
 	my %resultJson = (
 		'resorts' => \@output
 	);
