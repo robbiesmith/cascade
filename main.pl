@@ -87,7 +87,7 @@ while ( sleep( $sleep ) ) {
     		my $icon = "http://snowcascades.com/cascade/icons/" . $currentJson->{"icon"} . ".png";
 			my $pubtime = $currentJson->{"time"};
 			if($pubtime) {
-				$pubtime = strftime("%a, %b %e %l:%M %p", localtime($pubtime));
+				$pubtime = strftime("%a, %b %d %I:%M %p", localtime($pubtime));
 			} else {
 				$pubtime="N/A";
 			}
@@ -114,7 +114,7 @@ while ( sleep( $sleep ) ) {
     		);
 			push(@weather, \@current);
 			for my $forecastItem (@$forecastJson) {
-	    		my $forecastTime = strftime("%a, %e %b %Y %H:%M:%S %z", localtime($forecastItem->{"time"}));
+	    		my $forecastTime = strftime("%a, %d %b %Y %H:%M %z", localtime($forecastItem->{"time"}));
 	    		my $wind;
 	    		if ( $forecastItem->{"windBearing"} ) {
 		    		$wind = windFormat( $forecastItem->{"windSpeed"}, $forecastItem->{"windBearing"} );
@@ -127,7 +127,7 @@ while ( sleep( $sleep ) ) {
 		    			"icon" => $icon
 		    		},
 		    		{
-		    			"header" => strftime("%a, %b %e", localtime($forecastItem->{"time"})),
+		    			"header" => strftime("%a, %b %d", localtime($forecastItem->{"time"})),
 		    			"text" => $forecastItem->{"summary"}
 		    		},
 		    		{
@@ -244,7 +244,7 @@ while ( sleep( $sleep ) ) {
 					my $pubtime = $item->{"pubDate"};
 					$pubtime = str2time($pubtime);
 					if($pubtime) {
-						$pubtime = strftime("%a, %b %e %l:%M %p", localtime($pubtime));
+						$pubtime = strftime("%a, %b %d %I:%M %p", localtime($pubtime));
 					} else {
 						$pubtime="N/A";
 					}
