@@ -5,6 +5,7 @@ from xml.dom import minidom
 import calendar
 import ftplib
 import io
+import getpass
 
 def windFormat(windspeed,direction):
   
@@ -29,6 +30,8 @@ def windFormat(windspeed,direction):
 
 #ftpPassword = raw_input("Enter FTP password: ")
 
+ftpPassword = getpass.getpass( "Enter FTP password: " )
+
 wunderkey = "9d0379aadbc4d2fa";
 forecastkey = "df995b53b3e151f1ff78ff56c6815bad";
 traffickey = "8c629dd7-e525-4846-adcc-682d55d892e8";
@@ -37,7 +40,7 @@ locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11,
      {'latitude': '46.935642', 'longitude': '-121.474807', 'trafficId': 5, 'onthesnowId': '124','name': 'Crystal Mountain', 'logo': 'crystal.jpg', 'nwac':  {'key':'OSOCMT', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
      {'latitude': '47.745095', 'longitude': '-121.091065', 'trafficId': 10, 'onthesnowId': '427','name': 'Stevens Pass', 'logo': 'stevens.gif', 'nwac':  {'key':'OSOSTS', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
      {'latitude': '48.862259', 'longitude': '-121.678397', 'trafficId': 6, 'onthesnowId': '266','name': 'Mt. Baker', 'logo': 'baker.gif', 'nwac':  {'key':'OSOMTB', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
-     {'latitude': '47.443647', 'longitude': '-121.427819', 'trafficId': 11, 'onthesnowId': '804','name': 'Alpental', 'logo': 'alpental.jpg', 'nwac':  {'key':'OSOALP', 'columns':{-2: 'Base', -3: '24 Hr Snow', -1: '24 Hr Snow at Top'} } },
+     {'latitude': '47.443647', 'longitude': '-121.427819', 'trafficId': 11, 'onthesnowId': '804','name': 'Alpental', 'logo': 'alpental.jpg', 'nwac':  {'key':'OSOALP', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } }, # , -1: '24 Hr Snow at Top' is unreliable
      {'latitude': '46.638358', 'longitude': '-121.390135', 'trafficId': 12, 'onthesnowId': '494','name': 'White Pass', 'logo': 'whitepass.gif', 'nwac':  {'key':'OSOWPS', 'columns':{-1: 'Base'} } } ]
 
 # my @locationList = ( ",,11,466,Summit at Snoqualmie,summit.gif", #snoqualmie
@@ -59,13 +62,10 @@ while ( 1 ):
     traffic_json = json.loads( response.read().decode("utf-8") )
     response.close()
     
-#     onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
-#     print (onthesnowURL);
-#     snowDom = minidom.parse(urllib.request.urlopen(onthesnowURL))
-
+    onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
+    snowDom = minidom.parse(urllib.request.urlopen(onthesnowURL))
 
     for item in locations:
-        print (item)
         # https://api.forecast.io/forecast/df995b53b3e151f1ff78ff56c6815bad/37.8267,-122.423
         # http://graphical.weather.gov/xml/rest.php
         # http://api.wunderground.com/api/9d0379aadbc4d2fa/forecast/q/98068.json
@@ -136,12 +136,26 @@ while ( 1 ):
         }
 
         conditionsURL = "http://www.nwac.us/data/{}". format( item["nwac"]["key"] )
-        print (conditionsURL)
         response = urllib.request.urlopen(conditionsURL)
         decoded_text = response.read().decode("utf-8")
         lines = decoded_text.splitlines()
 
         conditionsItems = []
+        for node in snowDom.getElementsByTagName('item'):  
+            if ( node.getElementsByTagName("ots:resort_id")[0].firstChild.nodeValue == item["onthesnowId"] ):
+                conditionsRow = {
+                    "header": "Status",
+                    "text" : node.getElementsByTagName("ots:open_staus")[0].firstChild.nodeValue # [sic] - should be open_status
+                }
+                conditionsItems.append(conditionsRow)
+                conditionsRow = {
+                    "header": "Surface",
+                    "text" : node.getElementsByTagName("ots:surface_condition")[0].firstChild.nodeValue
+                }
+                conditionsItems.append(conditionsRow)
+
+#         foreach my $item (@{$data->{channel}->{item}}) {
+#             if ( $item->{'ots:resort_id'} == $onthesnowId ) {
 
         for line in reversed(lines) :
             words = line.strip().split()
@@ -161,6 +175,7 @@ while ( 1 ):
                 }
                 conditionsItems.append(updateTimeRow)
                 break
+
         conditionsHash = {
             "title": "Snow",
             "body" : conditionsItems
@@ -218,8 +233,8 @@ while ( 1 ):
                     "link": "http://www.forecast.io"
                  },
                 {
-                    "header": "Traffic",
-                    "text": "Pass traffic data courtesy Washington State Department of Transportation. Used by permission."
+                    "header": "Roads",
+                    "text": "Pass highway data courtesy Washington State Department of Transportation. Used by permission."
                 },
                 {
                     "header" : "Snow",
@@ -235,7 +250,9 @@ while ( 1 ):
                  },
                 {
                     "header" : "Get the app",
-                    "text" : "SnowCascades is now available for iPhone and iPad. Find it on the App Store."
+                    "text" : "SnowCascades is now available for iPhone and iPad. Find it on the App Store.",
+                    "linktext" : "App Store",
+                    "link" : "https://itunes.apple.com/us/app/snowcascades/id789974240"
                  },
                 {
                     "header" : "Check us out",
@@ -265,13 +282,15 @@ while ( 1 ):
     json_text = json.dumps({"resorts":output})
     print(json_text)
 
-    session = ftplib.FTP('ftp.talismith.com','robtali','foobat')
+    session = ftplib.FTP('ftp.talismith.com','robtali',ftpPassword)
     session.cwd("/public_html/cascade")
 
     session.storlines( "STOR data.json", io.BytesIO(json_text.encode("utf-8")) )
 
     session.quit()
 
-    break # do not loop - for dev
+    print (time.strftime("%a, %b %d %I:%M %p", time.localtime() ))
+
+    # break # do not loop - for dev
 
     time.sleep( sleep );
