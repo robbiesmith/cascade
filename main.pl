@@ -223,7 +223,8 @@ while ( sleep( $sleep ) ) {
 	# http://www.onthesnow.com/washington/snow-rss.html
 	# http://www.onthesnow.com/ots/webservice_tools/OTSWebService2009.html
 	
-	# http://www.myweather2.com/developer/weather.ashx?uac=wtSAzBFQ8t&uref=69931fe1-463b-4de8-9f46-00f2da8ddaec
+	# http://www.myweather2.com/developer/weather.ashx?uac=wtSAzBFQ8t&uref=69931fe1-463b-4de8-9f46-00f2da8ddaec&output=json
+	# http://www.myweather2.com/developer/weather.ashx?uac=wtSAzBFQ8t&uref=5e64ad40-849f-42d2-9663-90e2300bb5e9&output=json
 	# http://www.snocountry.com/ski-reports/washington
 	
 		my %conditionsHash = ();
@@ -259,11 +260,11 @@ while ( sleep( $sleep ) ) {
 							},
 			    			{
 				    			"header" => "Base",
-				    			"text" => $item->{"ots:base_depth"}
+				    			"text" => $item->{"ots:base_depth"}. " " . $item->{"ots:base_depth_metric"}
 			    			},
 			    			{
 				    			"header" => "Last 48 hours",
-				    			"text" => $item->{"ots:snowfall_48hr"}
+				    			"text" => $item->{"ots:snowfall_48hr"} . " " . $item->{"ots:snowfall_48hr_metric"}
 			    			},
 			    			{
 				    			"header" => "Last update",
