@@ -279,7 +279,7 @@ while ( 1 ):
 
     output.append(about)
 
-    json_text = json.dumps({"resorts":output})
+    json_text = json.dumps({"resorts":output},indent=2)
     print(json_text)
 
     session = ftplib.FTP('ftp.talismith.com','robtali',ftpPassword)
