@@ -57,13 +57,21 @@ sleep = 7200; #update the server every 120 minutes
 while ( 1 ):
     output = []
 
-    trafficURL = "http://www.wsdot.wa.gov/Traffic/api/MountainPassConditions/MountainPassConditionsREST.svc/GetMountainPassConditionsAsJson?AccessCode=" + traffickey;
-    response = urllib.request.urlopen(trafficURL)
-    traffic_json = json.loads( response.read().decode("utf-8") )
-    response.close()
+    try:
+        trafficURL = "http://www.wsdot.wa.gov/Traffic/api/MountainPassConditions/MountainPassConditionsREST.svc/GetMountainPassConditionsAsJson?AccessCode=" + traffickey;
+        response = urllib.request.urlopen(trafficURL)
+        traffic_json = json.loads( response.read().decode("utf-8") )
+        response.close()
+    except:
+        print("traffic server not responding")
+        traffic_json = []
     
-    onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
-    snowDom = minidom.parse(urllib.request.urlopen(onthesnowURL))
+    try:
+        onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
+        snowDom = minidom.parse(urllib.request.urlopen(onthesnowURL))
+    except:
+        print("onTheSnow not responding")
+        snowDom = minidom.Document()
 
     for item in locations:
         # https://api.forecast.io/forecast/df995b53b3e151f1ff78ff56c6815bad/37.8267,-122.423
@@ -71,74 +79,86 @@ while ( 1 ):
         # http://api.wunderground.com/api/9d0379aadbc4d2fa/forecast/q/98068.json
         name = item['name']
         logo = item['logo']
-
-        forecastURL = "https://api.forecast.io/forecast/" + forecastkey + "/" + item['latitude'] + "," + item['longitude']
-        response = urllib.request.urlopen(forecastURL)
-        decoded_json = json.loads( response.read().decode("utf-8"))
-        response.close()
-        
-        current_json = decoded_json["currently"]
-        #print(current_json)
-        weather = []
-        wind = windFormat(current_json["windSpeed"],current_json["windBearing"])
-        icon = "http://snowcascades.com/cascade/icons/" + current_json["icon"] + ".png"
-        pubTime = time.strftime("%a, %b %d %I:%M %p", time.localtime(current_json["time"]) )
-        current = [ {'icon': icon },
-                    {
-                     "header": "Current conditions",
-                     "text": current_json["summary"]
-                    },
-                    {
-                     "header": "Temperature",
-                     "text": "%.0f F" % current_json["temperature"]
-                    },
-                    {
-                     "header": "Wind",
-                     "text": wind
-                    },
-                    {
-                     "header": "Last Update",
-                     "text": pubTime
-                    }
-                  ]
-        weather.append(current)
-        
-        forecastDaily = decoded_json["daily"]["data"]
-        for day in forecastDaily:
-            wind = windFormat(day["windSpeed"],day["windBearing"])
-            icon = "http://snowcascades.com/cascade/icons/" + day["icon"] + ".png"
-            forecastTime = time.strftime("%a, %b %d", time.localtime(day["time"]) )
-
-            dayOutput = [ {'icon': icon },
-                    {
-                     "header": forecastTime, # strftime("%a, %b %d", localtime($forecastItem->{"time"})),
-                     "text": day["summary"]
-                    },
-                    {
-                     "header": "High",
-                     "text": "%.0f F" % day["temperatureMax"]
-                    },
-                    {
-                     "header": "Low",
-                     "text": "%.0f F" % day["temperatureMin"]
-                    },
-                    {
-                     "header": "Wind",
-                     "text": wind
-                    }
-                  ]
-            weather.append(dayOutput)
-            
-
-        weatherHash = {
-            "title": "Weather",
-            "tabs" : weather
+        resortComplete = {
+            'name' : name,
+            'logo': "http://snowcascades.com/cascade/icons/{}".format( logo )
         }
 
-        conditionsURL = "http://www.nwac.us/data/{}". format( item["nwac"]["key"] )
-        response = urllib.request.urlopen(conditionsURL)
-        decoded_text = response.read().decode("utf-8")
-        lines = decoded_text.splitlines()
+        try:
+            forecastURL = "https://api.forecast.io/forecast/" + forecastkey + "/" + item['latitude'] + "," + item['longitude']
+            response = urllib.request.urlopen(forecastURL)
+            decoded_json = json.loads( response.read().decode("utf-8"))
+            response.close()
+        
+            current_json = decoded_json["currently"]
+            #print(current_json)
+            weather = []
+            wind = windFormat(current_json["windSpeed"],current_json["windBearing"])
+            icon = "http://snowcascades.com/cascade/icons/" + current_json["icon"] + ".png"
+            pubTime = time.strftime("%a, %b %d %I:%M %p", time.localtime(current_json["time"]) )
+            current = [ {'icon': icon },
+                        {
+                         "header": "Current conditions",
+                         "text": current_json["summary"]
+                        },
+                        {
+                         "header": "Temperature",
+                         "text": "%.0f F" % current_json["temperature"]
+                        },
+                        {
+                         "header": "Wind",
+                         "text": wind
+                        },
+                        {
+                         "header": "Last Update",
+                         "text": pubTime
+                        }
+                      ]
+            weather.append(current)
+            
+            forecastDaily = decoded_json["daily"]["data"]
+            for day in forecastDaily:
+                wind = windFormat(day["windSpeed"],day["windBearing"])
+                icon = "http://snowcascades.com/cascade/icons/" + day["icon"] + ".png"
+                forecastTime = time.strftime("%a, %b %d", time.localtime(day["time"]) )
+    
+                dayOutput = [ {'icon': icon },
+                        {
+                         "header": forecastTime, # strftime("%a, %b %d", localtime($forecastItem->{"time"})),
+                         "text": day["summary"]
+                        },
+                        {
+                         "header": "High",
+                         "text": "%.0f F" % day["temperatureMax"]
+                        },
+                        {
+                         "header": "Low",
+                         "text": "%.0f F" % day["temperatureMin"]
+                        },
+                        {
+                         "header": "Wind",
+                         "text": wind
+                        }
+                      ]
+                weather.append(dayOutput)
+                
+    
+            weatherHash = {
+                "title": "Weather",
+                "tabs" : weather
+            }
+            resortComplete['weather'] = weatherHash
+        except:
+            print("forecast.io not responding or bad data")
+
+        try:
+            conditionsURL = "http://www.nwac.us/data/{}". format( item["nwac"]["key"] )
+            response = urllib.request.urlopen(conditionsURL)
+            decoded_text = response.read().decode("utf-8")
+            lines = decoded_text.splitlines()
+        except:
+            print("NWAC not responding")
+            lines = []
 
         conditionsItems = []
         for node in snowDom.getElementsByTagName('item'):  
@@ -167,8 +187,8 @@ while ( 1 ):
                         "text" : "{} inches".format(words[key])
                     }
                     conditionsItems.append(conditionsRow)
-                updateTimeString = "%02d %02d %04d" % (int(words[0]), int(words[1]), int(words[2]))
-                updateTime = time.strptime(updateTimeString, "%m %d %H%M")
+                updateTimeString = "{} %02d %02d %04d".format( time.strftime("%Y", time.localtime() ) ) % (int(words[0]), int(words[1]), int(words[2]))
+                updateTime = time.strptime(updateTimeString, "%Y %m %d %H%M")
                 updateTimeRow = {
                     "header": "Last update",
                     "text" : time.strftime("%a, %b %d %I:%M %p", updateTime )
@@ -180,6 +200,7 @@ while ( 1 ):
             "title": "Snow",
             "body" : conditionsItems
         }
+        resortComplete['conditions'] = conditionsHash
         
         #http://www.myweather2.com/developer/weather.ashx?uac=wtSAzBFQ8t&uref=5e64ad40-849f-42d2-9663-90e2300bb5e9&output=json
         # http://www.nwac.us/data/OSOSNO - snoqualmie
@@ -212,17 +233,10 @@ while ( 1 ):
                     "title": "Roads",
                     "body" : body
                 }
-                json.dumps(trafficHash)
+                resortComplete['traffic'] = trafficHash
 
                 break
 
-        resortComplete = {
-            'name' : name,
-            'logo': "http://snowcascades.com/cascade/icons/{}".format( logo ),
-            'conditions': conditionsHash,
-            'traffic': trafficHash,
-            'weather': weatherHash
-        }
         output.append(resortComplete)
 
     body = [
@@ -256,7 +270,9 @@ while ( 1 ):
                  },
                 {
                     "header" : "Check us out",
-                    "text" : "Look for SnowCascades on Facebook and Twitter."
+                    "text" : "Look for SnowCascades on Facebook and Twitter.",
+                    "linktext" : "On Twitter",
+                    "link" : "https://twitter.com/SnowCascades"
                 }
             );
 
@@ -282,12 +298,15 @@ while ( 1 ):
     json_text = json.dumps({"resorts":output},indent=2)
     print(json_text)
 
-    session = ftplib.FTP('ftp.talismith.com','robtali',ftpPassword)
-    session.cwd("/public_html/cascade")
-
-    session.storlines( "STOR data.json", io.BytesIO(json_text.encode("utf-8")) )
-
-    session.quit()
+    try:
+        session = ftplib.FTP('ftp.talismith.com','robtali',ftpPassword)
+        session.cwd("/public_html/cascade")
+    
+        session.storlines( "STOR data.json", io.BytesIO(json_text.encode("utf-8")) )
+    
+        session.quit()
+    except:
+        print("ftp upload failed")
 
     print (time.strftime("%a, %b %d %I:%M %p", time.localtime() ))
 
