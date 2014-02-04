@@ -6,6 +6,7 @@ import calendar
 import ftplib
 import io
 import getpass
+import logging
 
 def windFormat(windspeed,direction):
   
@@ -28,7 +29,13 @@ def windFormat(windspeed,direction):
     
     return "{0:.0f} mph from {1}".format(windspeed, direction)
 
-#ftpPassword = raw_input("Enter FTP password: ")
+logger = logging.getLogger(__name__)
+
+handler = logging.FileHandler('error_log.txt')
+logger.addHandler(handler)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
 
 ftpPassword = getpass.getpass( "Enter FTP password: " )
 
@@ -63,15 +70,15 @@ while ( 1 ):
         traffic_json = json.loads( response.read().decode("utf-8") )
         response.close()
     except:
-        print("traffic server not responding")
         traffic_json = []
+        logger.error('traffic server not responding', exc_info=True)
     
     try:
         onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
         snowDom = minidom.parse(urllib.request.urlopen(onthesnowURL))
     except:
-        print("onTheSnow not responding")
         snowDom = minidom.Document()
+        logger.error('onTheSnow not responding', exc_info=True)
 
     for item in locations:
         # https://api.forecast.io/forecast/df995b53b3e151f1ff78ff56c6815bad/37.8267,-122.423
@@ -149,7 +156,7 @@ while ( 1 ):
             }
             resortComplete['weather'] = weatherHash
         except:
-            print("forecast.io not responding or bad data")
+            logger.error('forecast.io not responding or bad data', exc_info=True)
 
         try:
             conditionsURL = "http://www.nwac.us/data/{}". format( item["nwac"]["key"] )
@@ -159,6 +166,7 @@ while ( 1 ):
         except:
             print("NWAC not responding")
             lines = []
+            logger.error('NWAC not responding', exc_info=True)
 
         conditionsItems = []
         for node in snowDom.getElementsByTagName('item'):  
@@ -307,6 +315,8 @@ while ( 1 ):
         session.quit()
     except:
         print("ftp upload failed")
+        logger.error('ftp upload failed', exc_info=True)
+        
 
     print (time.strftime("%a, %b %d %I:%M %p", time.localtime() ))
 
