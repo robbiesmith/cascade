@@ -7,6 +7,7 @@ import ftplib
 import io
 import getpass
 import logging
+import html2text
 
 def windFormat(windspeed,direction):
   
@@ -43,12 +44,16 @@ wunderkey = "9d0379aadbc4d2fa";
 forecastkey = "df995b53b3e151f1ff78ff56c6815bad";
 traffickey = "8c629dd7-e525-4846-adcc-682d55d892e8";
 
-locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11, 'onthesnowId': '466','name': 'Summit at Snoqualmie', 'logo': 'summit.gif', 'nwac': {'key':'OSOSNO', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
-     {'latitude': '46.935642', 'longitude': '-121.474807', 'trafficId': 5, 'onthesnowId': '124','name': 'Crystal Mountain', 'logo': 'crystal.jpg', 'nwac':  {'key':'OSOCMT', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
-     {'latitude': '47.745095', 'longitude': '-121.091065', 'trafficId': 10, 'onthesnowId': '427','name': 'Stevens Pass', 'logo': 'stevens.gif', 'nwac':  {'key':'OSOSTS', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
-     {'latitude': '48.862259', 'longitude': '-121.678397', 'trafficId': 6, 'onthesnowId': '266','name': 'Mt. Baker', 'logo': 'baker.gif', 'nwac':  {'key':'OSOMTB', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
-     {'latitude': '47.443647', 'longitude': '-121.427819', 'trafficId': 11, 'onthesnowId': '804','name': 'Alpental', 'logo': 'alpental.jpg', 'nwac':  {'key':'OSOALP', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } }, # , -1: '24 Hr Snow at Top' is unreliable
-     {'latitude': '46.638358', 'longitude': '-121.390135', 'trafficId': 12, 'onthesnowId': '494','name': 'White Pass', 'logo': 'whitepass.gif', 'nwac':  {'key':'OSOWPS', 'columns':{-1: 'Base'} } } ]
+locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11, 'onthesnowId': '466','name': 'Summit at Snoqualmie', 'shortName': 'Summit', 'logo': 'summit.gif', 'nwac': {'key':'OSOSNO', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
+     {'latitude': '46.935642', 'longitude': '-121.474807', 'trafficId': 5, 'onthesnowId': '124','name': 'Crystal Mountain', 'shortName': 'Crystal', 'logo': 'crystal.jpg', 'nwac':  {'key':'OSOCMT', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
+     {'latitude': '47.745095', 'longitude': '-121.091065', 'trafficId': 10, 'onthesnowId': '427','name': 'Stevens Pass', 'shortName': 'Stevens', 'logo': 'stevens.gif', 'nwac':  {'key':'OSOSTS', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
+     {'latitude': '48.862259', 'longitude': '-121.678397', 'trafficId': 6, 'onthesnowId': '266','name': 'Mt. Baker', 'shortName': 'Mt. Baker', 'logo': 'baker.gif', 'nwac':  {'key':'OSOMTB', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
+     {'latitude': '47.443647', 'longitude': '-121.427819', 'trafficId': 11, 'onthesnowId': '804','name': 'Alpental', 'shortName': 'Alpental', 'logo': 'alpental.jpg', 'nwac':  {'key':'OSOALP', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } }, # , -1: '24 Hr Snow at Top' is unreliable
+     {'latitude': '46.638358', 'longitude': '-121.390135', 'trafficId': 12, 'onthesnowId': '494','name': 'White Pass', 'shortName': 'White Pass', 'logo': 'whitepass.gif', 'nwac':  {'key':'OSOWPS', 'columns':{-1: 'Base'} } } ]
+
+backcountryLocations = [ {'label': 'Snoqualmie', 'key': 'cascade-west-snoqualmie-pass'},
+                        {'label': 'Stevens', 'key': 'cascade-west-stevens-pass'},
+                        {'label': 'White', 'key': 'cascade-west-white-pass'} ];
 
 # my @locationList = ( ",,11,466,Summit at Snoqualmie,summit.gif", #snoqualmie
 #             "46.935642,-121.,5,124,Crystal Mountain,crystal.jpg", #crystal
@@ -85,9 +90,11 @@ while ( 1 ):
         # http://graphical.weather.gov/xml/rest.php
         # http://api.wunderground.com/api/9d0379aadbc4d2fa/forecast/q/98068.json
         name = item['name']
+        shortName = item['shortName']
         logo = item['logo']
         resortComplete = {
             'name' : name,
+            'shortName' : shortName,
             'logo': "http://snowcascades.com/cascade/icons/{}".format( logo )
         }
 
@@ -247,6 +254,80 @@ while ( 1 ):
 
         output.append(resortComplete)
 
+    snoqHash = {}
+    stevensHash = {}
+    whiteHash = {}
+    for item in backcountryLocations:
+        #http://www.nwac.us/api/v2/avalanche-region-forecast/?format=json&zone=cascade-west-snoqualmie-pass
+        #http://www.nwac.us/static/images/danger-levels/moderate.png
+        #http://www.nwac.us/static/common/images/nwac-logo-square.jpg
+# "day1_danger_elev_high": "Moderate",
+#             "day1_danger_elev_low": "Moderate",
+#             "day1_danger_elev_middle": "Moderate",
+#             "day1_date": "2014-02-27",
+#             "day1_detailed_forecast": "<p>East winds should abate Wednesday night and temperatures should warm around the Snoqualmie Pass area Thursday. &nbsp;Partly sunny skies through mid-day will further help weaken the most recently formed ice crust and may allow wet-loose avalanches to become possible on&nbsp;steeper solar facing aspects.&nbsp;</p>\r\n\r\n<p>Human triggered large or very large avalanches have become unlikely but&nbsp;are still high consequence if able to step down to poorly bonded&nbsp;previous&nbsp;storm layers or buried persistent weak layers. Cornices have grown large and may be sensitive.&nbsp;A cornice failure could provide a large enough natural trigger to trigger a large and destructive avalanche. &nbsp;Avoid areas in avalanche terrain where you believe the snowpack to be shallower and potentially easier to trigger a deep PWL.&nbsp;</p>\r\n",
+#             "day1_trend": null,
+#             "day1_warning": "none",
+#             "day1_warning_end": null,
+#             "day1_warning_text": "",
+#             "day2_danger_elev_high": "Moderate",
+#             "day2_danger_elev_low": "Moderate",
+#             "day2_danger_elev_middle": "Moderate",
+#             "day2_trend": null,
+#             "day2_warning": "none",
+#             "day2_warning_end": null,
+#             "day2_warning_text": "",
+#             "id": 524,
+#             "order": 3,
+#             "publish_date": "2014-02-26T18:31:01",
+#             "resource_uri": "/api/v2/avalanche-region-forecast/524/",
+#             "snowpack_discussion": "<p>Deep recent storm snow after the weekend has been drastically changed in the Snoqualmie Pass area as of Tuesday morning.&nbsp;Early Monday morning a period of freezing rain occurred in the Snoqualmie Pass area depositing a thin crust. &nbsp;An additional 6 to 8 inches of new snow fell over that layer before a more widespread freezing rain event occurred overnight Monday. &nbsp;This has left a clear supportable ice layer capping deeper low density snow that fell earlier. &nbsp;</p>\r\n\r\n<p>While the current conditions do not support an avalanche danger, they do support a falling and sliding hazard as the surface in most areas is a smooth hard ice layer.</p>\r\n\r\n<p>There remains to be a concern for deep slab releases in this area, given the many recent large slides over the past week. &nbsp;However with the current ice structure it will likely take a significant trigger, such as a very large cornice collapse to possibly initiate a slide to that deep layer. &nbsp;Reports of a very large natural hard slab avalanche off steep north facing&nbsp;terrain of&nbsp;Chair Peak near Alpental&nbsp;partially caught 3 skiers Saturday. Luckily&nbsp;no on was injured in this potentially deadly&nbsp;avalanche with a&nbsp;10&#39; crown. &nbsp;It is believed this slide was initiated by a smaller slide or possible cornice failure then stepped down to the deep layer.&nbsp;This&nbsp;avalanche paired with the frequent and large results from ski patrol&nbsp;should steer&nbsp;the discussion to&nbsp;terrain management of&nbsp;low probability and high consequence slides that release down to old storm layers or the late Jan&nbsp;crust.</p>\r\n\r\n<p>Please see the other west slopes and Cascade Passes forecast for a more complete picture of the&nbsp;avalanche and snowpack conditions elsewhere.&nbsp;</p>\r\n",
+        try:
+            backcountryURL = "http://www.nwac.us/api/v2/avalanche-region-forecast/?format=json&zone={}". format( item["key"] )
+            response = urllib.request.urlopen(backcountryURL)
+            decoded_json = json.loads( response.read().decode("utf-8"))
+            response.close()
+        
+            current_json = decoded_json["objects"][0]
+            
+            if item["label"] == 'Snoqualmie':
+                activeItem = snoqHash
+            elif item["label"] == 'Stevens':
+                activeItem = stevensHash
+            elif item["label"] == 'White':
+                activeItem = whiteHash
+            else:
+                continue
+
+            activeItem['title'] = item["label"]
+            icon = "http://www.nwac.us/static/images/danger-levels/{}.png". format( current_json['day1_danger_elev_low'].lower() )
+            activeItem['body'] = [
+                                  {'icon': icon },
+                                  {'header' : 'Avalanche danger level',
+                                   'text' : current_json['day1_danger_elev_low']
+                                  },
+                                  {'header' : 'Details',
+                                   'text' : html2text.html2text(current_json['day1_detailed_forecast']),
+                                   'linktext' : 'More info',
+                                   'link' : 'http://www.nwac.us/avalanche-forecast/current/{}/'. format( item["key"] )
+                                  }
+                                ]
+
+        except:
+            print("NWAC avalanche not responding")
+            logger.error('NWAC avalanche not responding', exc_info=True)
+
+    backcountry = {
+        'name' : 'Backcountry',
+        'shortName' : 'Backcountry',
+        'logo' : "http://www.nwac.us/static/common/images/nwac-logo-square.jpg",
+        'conditions' : snoqHash,
+        'traffic' : stevensHash,
+        'extra' : whiteHash
+    }
+
+    output.append(backcountry)
+
     body = [
                 {
                     "header": "Weather",
@@ -296,6 +377,7 @@ while ( 1 ):
 
     about = {
         'name' : 'About',
+        'shortName' : 'About',
         'logo' : "http://snowcascades.com/cascade/icons/Snowflake-icon.png",
         'conditions' : dataHash,
         'traffic' : moreHash
