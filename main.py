@@ -51,9 +51,9 @@ locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11,
      {'latitude': '47.443647', 'longitude': '-121.427819', 'trafficId': 11, 'onthesnowId': '804','name': 'Alpental', 'shortName': 'Alpental', 'logo': 'alpental.jpg', 'nwac':  {'key':'OSOALP', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } }, # , -1: '24 Hr Snow at Top' is unreliable
      {'latitude': '46.638358', 'longitude': '-121.390135', 'trafficId': 12, 'onthesnowId': '494','name': 'White Pass', 'shortName': 'White Pass', 'logo': 'whitepass.gif', 'nwac':  {'key':'OSOWPS', 'columns':{-1: 'Base'} } } ]
 
-backcountryLocations = [ {'label': 'Snoqualmie', 'key': 'cascade-west-snoqualmie-pass'},
-                        {'label': 'Stevens', 'key': 'cascade-west-stevens-pass'},
-                        {'label': 'White', 'key': 'cascade-west-white-pass'} ];
+backcountryLocations = [ {'label': 'Snoqualmie', 'title': 'Snoqualmie Pass', 'key': 'cascade-west-snoqualmie-pass'},
+                        {'label': 'Stevens', 'title': 'Stevens Pass', 'key': 'cascade-west-stevens-pass'},
+                        {'label': 'White', 'title': 'White Pass', 'key': 'cascade-west-white-pass'} ];
 
 # my @locationList = ( ",,11,466,Summit at Snoqualmie,summit.gif", #snoqualmie
 #             "46.935642,-121.,5,124,Crystal Mountain,crystal.jpg", #crystal
@@ -301,15 +301,25 @@ while ( 1 ):
 
             activeItem['title'] = item["label"]
             icon = "http://www.nwac.us/static/images/danger-levels/{}.png". format( current_json['day1_danger_elev_low'].lower() )
+
+            updateTime = time.strptime(current_json['publish_date'], "%Y-%m-%dT%H:%M:%S")
+
             activeItem['body'] = [
-                                  {'icon': icon },
+                                  {
+                                    'header' : item['title']
+                                  },
                                   {'header' : 'Avalanche danger level',
                                    'text' : current_json['day1_danger_elev_low']
                                   },
+                                  {'icon': icon },
                                   {'header' : 'Details',
                                    'text' : html2text.html2text(current_json['day1_detailed_forecast']),
                                    'linktext' : 'More info',
                                    'link' : 'http://www.nwac.us/avalanche-forecast/current/{}/'. format( item["key"] )
+                                  },
+                                  {
+                                    "header": "Last update",
+                                    "text" : time.strftime("%a, %b %d %I:%M %p", updateTime )
                                   }
                                 ]
 
@@ -341,7 +351,7 @@ while ( 1 ):
                 },
                 {
                     "header" : "Snow",
-                    "text" : "Snow conditions data courtesy Northwest Avalanche Center. Used by permission.",
+                    "text" : "Snow conditions and avalanche forecast data courtesy Northwest Avalanche Center. Used by permission.",
                     "linktext" : "NWAC",
                     "link" : "http://www.nwac.us/"
                 }
