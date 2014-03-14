@@ -363,15 +363,19 @@ while ( 1 ):
                  },
                 {
                     "header" : "Get the app",
-                    "text" : "SnowCascades is now available for iPhone and iPad. Find it on the App Store.",
-                    "linktext" : "App Store",
+                    "text" : "SnowCascades is now available for iPhone and iPad. (Coming soon for Windows Phone.)",
+                    "linktext" : "For iPhone and iPad",
                     "link" : "https://itunes.apple.com/us/app/snowcascades/id789974240"
                  },
                 {
                     "header" : "Check us out",
-                    "text" : "Look for SnowCascades on Facebook and Twitter.",
+                    "text" : "Look for SnowCascades:",
                     "linktext" : "On Twitter",
                     "link" : "https://twitter.com/SnowCascades"
+                },
+                {
+                    "linktext" : "On Facebook",
+                    "link" : "https://www.facebook.com/snowcascades"
                 }
             );
 
