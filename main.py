@@ -202,8 +202,12 @@ while ( 1 ):
                         "text" : "{} inches".format(words[key])
                     }
                     conditionsItems.append(conditionsRow)
-                updateTimeString = "{} %02d %02d %04d".format( time.strftime("%Y", time.localtime() ) ) % (int(words[0]), int(words[1]), int(words[2]))
-                updateTime = time.strptime(updateTimeString, "%Y %m %d %H%M")
+                try:
+                    updateTimeString = "{} %02d %02d %04d".format( time.strftime("%Y", time.localtime() ) ) % (int(words[0]), int(words[1]), int(words[2]))
+                    updateTime = time.strptime(updateTimeString, "%Y %m %d %H%M")
+                except:
+                    updateTime = now()
+
                 updateTimeRow = {
                     "header": "Last update",
                     "text" : time.strftime("%a, %b %d %I:%M %p", updateTime )
@@ -344,7 +348,7 @@ while ( 1 ):
                     "text": "Weather data courtesy Forecast.io. Used by permission.",
                     "linktext": "Forecast.io",
                     "link": "http://www.forecast.io"
-                 },
+                },
                 {
                     "header": "Roads",
                     "text": "Pass highway data courtesy Washington State Department of Transportation. Used by permission."
@@ -360,13 +364,17 @@ while ( 1 ):
                 {
                     "header" : "Developed by",
                     "text" : "Rob Smith"
-                 },
+                },
                 {
                     "header" : "Get the app",
-                    "text" : "SnowCascades is now available for iPhone and iPad. (Coming soon for Windows Phone.)",
+                    "text" : "SnowCascades is now available:",
                     "linktext" : "For iPhone and iPad",
                     "link" : "https://itunes.apple.com/us/app/snowcascades/id789974240"
                  },
+                {
+                    "linktext" : "For Windows Phone",
+                    "link" : "http://www.windowsphone.com/en-us/store/app/snowcascades/efde4720-5873-4646-8678-4c1ccb0f55df"
+                },
                 {
                     "header" : "Check us out",
                     "text" : "Look for SnowCascades:",
