@@ -202,8 +202,11 @@ while ( 1 ):
                         "text" : "{} inches".format(words[key])
                     }
                     conditionsItems.append(conditionsRow)
-                updateTimeString = "{} %02d %02d %04d".format( time.strftime("%Y", time.localtime() ) ) % (int(words[0]), int(words[1]), int(words[2]))
-                updateTime = time.strptime(updateTimeString, "%Y %m %d %H%M")
+                try:
+                    updateTimeString = "{} %02d %02d %04d".format( time.strftime("%Y", time.localtime() ) ) % (int(words[0]), int(words[1]), int(words[2]))
+                    updateTime = time.strptime(updateTimeString, "%Y %m %d %H%M")
+                except:
+                    updateTime = time.localtime()
                 updateTimeRow = {
                     "header": "Last update",
                     "text" : time.strftime("%a, %b %d %I:%M %p", updateTime )
