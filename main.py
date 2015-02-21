@@ -8,6 +8,8 @@ import io
 import getpass
 import logging
 import html2text
+from Crypto.Cipher import AES
+import base64
 
 def windFormat(windspeed,direction):
   
@@ -43,6 +45,25 @@ ftpPassword = getpass.getpass( "Enter FTP password: " )
 wunderkey = "9d0379aadbc4d2fa";
 forecastkey = "df995b53b3e151f1ff78ff56c6815bad";
 traffickey = "8c629dd7-e525-4846-adcc-682d55d892e8";
+nwacapp = "snowcascades"
+nwackey = "qEoe3C1Y2P254Xsn"
+
+def _pad_input(s):
+   BLOCK_SIZE = 16
+   PADDING = '{'
+   return s + (BLOCK_SIZE - len(s) % BLOCK_SIZE) * PADDING
+
+dict = {'latitude': 47.607936,
+       'longitude': -122.308762,
+       'source': 'GPS',
+       'accuracy': 123.33,
+       'local_time': '2014-11-30 13:32:20',
+       }
+
+raw_txt = json.dumps(dict)
+cipher = AES.new(nwackey)
+loc = base64.urlsafe_b64encode(cipher.encrypt(_pad_input(raw_txt)))
+
 
 locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11, 'onthesnowId': '466','name': 'Summit at Snoqualmie', 'shortName': 'Summit', 'logo': 'summit.gif', 'nwac': {'key':'OSOSNO', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
      {'latitude': '46.935642', 'longitude': '-121.474807', 'trafficId': 5, 'onthesnowId': '124','name': 'Crystal Mountain', 'shortName': 'Crystal', 'logo': 'crystal.jpg', 'nwac':  {'key':'OSOCMT', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
@@ -52,8 +73,8 @@ locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11,
      {'latitude': '46.638358', 'longitude': '-121.390135', 'trafficId': 12, 'onthesnowId': '494','name': 'White Pass', 'shortName': 'White Pass', 'logo': 'whitepass.gif', 'nwac':  {'key':'OSOWPS', 'columns':{-1: 'Base'} } } ]
 
 backcountryLocations = [ {'label': 'Snoqualmie', 'title': 'Snoqualmie Pass', 'key': 'cascade-west-snoqualmie-pass'},
-                        {'label': 'Stevens', 'title': 'Stevens Pass', 'key': 'cascade-west-stevens-pass'},
-                        {'label': 'White', 'title': 'White Pass', 'key': 'cascade-west-white-pass'} ];
+                        {'label': 'Stevens', 'title': 'Stevens Pass', 'key': 'cascade-west-stevens-pass'} ];
+#                        {'label': 'White', 'title': 'White Pass', 'key': 'cascade-west-white-pass'}
 
 # my @locationList = ( ",,11,466,Summit at Snoqualmie,summit.gif", #snoqualmie
 #             "46.935642,-121.,5,124,Crystal Mountain,crystal.jpg", #crystal
@@ -334,8 +355,8 @@ while ( 1 ):
             'shortName' : 'Backcountry',
             'logo' : "http://www.nwac.us/static/common/images/nwac-logo-square.jpg",
             'conditions' : snoqHash,
-            'traffic' : stevensHash,
-            'extra' : whiteHash
+            'traffic' : stevensHash
+#            'extra' : whiteHash
         }
 
         output.append(backcountry)
@@ -429,3 +450,11 @@ while ( 1 ):
     # break # do not loop - for dev
 
     time.sleep( sleep );
+    
+#    <link href="http://www.snow-forecast.com/stylesheets/feed.css" media="screen" rel="stylesheet" type="text/css" /><div id="wf-weatherfeed">
+#    <iframe style="overflow:hidden;border:none;" allowtransparency="true" height="272" width="469" src="http://www.snow-forecast.com/resorts/Alpental-At-The-#Summit/forecasts/feed/mid/i" scrolling="no" frameborder="0" marginwidth="0" marginheight="0">
+#    <p>Your browser does not support iframes.</p></iframe><div id="wf-link"><a href="http://www.snow-forecast.com/">
+#    <img alt="Snow Forecast" src="http://www.snow-forecast.com/images/feed/snowlogo-150.png"/></a>
+#    <p id="cmt">View detailed snow forecast for <a href="http://www.snow-forecast.com/resorts/Alpental-At-The-Summit?#utm_source=embeddable&amp;utm_medium=widget&amp;utm_campaign=Alpental-At-The-Summit">Alpental At The Summit</a> at:<br />
+#    <a href="http://www.snow-forecast.com/resorts/Alpental-At-The-Summit?utm_source=embeddable&amp;utm_medium=widget&amp;utm_campaign=Alpental-At-The-Summit">
+#    <strong>snow-forecast.com</strong></a></p><div style="clear: both;"></div></div></div>
