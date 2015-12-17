@@ -65,12 +65,12 @@ cipher = AES.new(nwackey)
 loc = base64.urlsafe_b64encode(cipher.encrypt(_pad_input(raw_txt)))
 
 
-locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11, 'onthesnowId': '466','name': 'Summit at Snoqualmie', 'shortName': 'Summit', 'logo': 'summit.gif', 'nwac': {'key':'OSOSNO', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
+locations = [ {'latitude': '47.41', 'longitude': '-121.405833', 'trafficId': 11, 'traffic_cam': 'http://images.wsdot.wa.gov/sc/090VC05200.jpg', 'onthesnowId': '466','name': 'Summit at Snoqualmie', 'shortName': 'Summit', 'logo': 'summit.gif', 'nwac': {'key':'OSOSNO', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
      {'latitude': '46.935642', 'longitude': '-121.474807', 'trafficId': 5, 'onthesnowId': '124','name': 'Crystal Mountain', 'shortName': 'Crystal', 'logo': 'crystal.jpg', 'nwac':  {'key':'OSOCMT', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
-     {'latitude': '47.745095', 'longitude': '-121.091065', 'trafficId': 10, 'onthesnowId': '427','name': 'Stevens Pass', 'shortName': 'Stevens', 'logo': 'stevens.gif', 'nwac':  {'key':'OSOSTS', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
+     {'latitude': '47.745095', 'longitude': '-121.091065', 'trafficId': 10, 'traffic_cam': 'http://images.wsdot.wa.gov/us2/stvldg/sumtwest.jpg', 'onthesnowId': '427','name': 'Stevens Pass', 'shortName': 'Stevens', 'logo': 'stevens.gif', 'nwac':  {'key':'OSOSTS', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } },
      {'latitude': '48.862259', 'longitude': '-121.678397', 'trafficId': 6, 'onthesnowId': '266','name': 'Mt. Baker', 'shortName': 'Mt. Baker', 'logo': 'baker.gif', 'nwac':  {'key':'OSOMTB', 'columns':{-1: 'Base', -2: '24 Hr Snow'} } },
-     {'latitude': '47.443647', 'longitude': '-121.427819', 'trafficId': 11, 'onthesnowId': '804','name': 'Alpental', 'shortName': 'Alpental', 'logo': 'alpental.jpg', 'nwac':  {'key':'OSOALP', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } }, # , -1: '24 Hr Snow at Top' is unreliable
-     {'latitude': '46.638358', 'longitude': '-121.390135', 'trafficId': 12, 'onthesnowId': '494','name': 'White Pass', 'shortName': 'White Pass', 'logo': 'whitepass.gif', 'nwac':  {'key':'OSOWPS', 'columns':{-1: 'Base'} } } ]
+     {'latitude': '47.443647', 'longitude': '-121.427819', 'trafficId': 11, 'traffic_cam': 'http://images.wsdot.wa.gov/sc/090VC05200.jpg', 'onthesnowId': '804','name': 'Alpental', 'shortName': 'Alpental', 'logo': 'alpental.jpg', 'nwac':  {'key':'OSOALP', 'columns':{-2: 'Base', -3: '24 Hr Snow'} } }, # , -1: '24 Hr Snow at Top' is unreliable
+     {'latitude': '46.638358', 'longitude': '-121.390135', 'trafficId': 12, 'traffic_cam': 'http://images.wsdot.wa.gov/sc/012vc15095.jpg', 'onthesnowId': '494','name': 'White Pass', 'shortName': 'White Pass', 'logo': 'whitepass.gif', 'nwac':  {'key':'OSOWPS', 'columns':{-1: 'Base'} } } ]
 
 backcountryLocations = [ {'label': 'Snoqualmie', 'title': 'Snoqualmie Pass', 'key': 'cascade-west-snoqualmie-pass'},
                         {'label': 'Stevens', 'title': 'Stevens Pass', 'key': 'cascade-west-stevens-pass'} ];
@@ -99,12 +99,13 @@ while ( 1 ):
         traffic_json = []
         logger.error('traffic server not responding', exc_info=True)
     
-    try:
-        onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
-        snowDom = minidom.parse(urllib.request.urlopen(onthesnowURL))
-    except:
-        snowDom = minidom.Document()
-        logger.error('onTheSnow not responding', exc_info=True)
+    #no longer available
+#     try:
+#         onthesnowURL = "http://www.onthesnow.com/washington/snow-rss.html";
+#         snowDom = minidom.parse(urllib.request.urlopen(onthesnowURL))
+#     except:
+#         snowDom = minidom.Document()
+#         logger.error('onTheSnow not responding', exc_info=True)
 
     for item in locations:
         # https://api.forecast.io/forecast/df995b53b3e151f1ff78ff56c6815bad/37.8267,-122.423
@@ -197,25 +198,28 @@ while ( 1 ):
             logger.error('NWAC not responding', exc_info=True)
 
         conditionsItems = []
-        for node in snowDom.getElementsByTagName('item'):  
-            if ( node.getElementsByTagName("ots:resort_id")[0].firstChild.nodeValue == item["onthesnowId"] ):
-                conditionsRow = {
-                    "header": "Status",
-                    "text" : node.getElementsByTagName("ots:open_staus")[0].firstChild.nodeValue # [sic] - should be open_status
-                }
-                conditionsItems.append(conditionsRow)
-                conditionsRow = {
-                    "header": "Surface",
-                    "text" : node.getElementsByTagName("ots:surface_condition")[0].firstChild.nodeValue
-                }
-                conditionsItems.append(conditionsRow)
+        # also not available - onthesnow
+        #=======================================================================
+        # for node in snowDom.getElementsByTagName('item'):  
+        #     if ( node.getElementsByTagName("ots:resort_id")[0].firstChild.nodeValue == item["onthesnowId"] ):
+        #         conditionsRow = {
+        #             "header": "Status",
+        #             "text" : node.getElementsByTagName("ots:open_staus")[0].firstChild.nodeValue # [sic] - should be open_status
+        #         }
+        #         conditionsItems.append(conditionsRow)
+        #         conditionsRow = {
+        #             "header": "Surface",
+        #             "text" : node.getElementsByTagName("ots:surface_condition")[0].firstChild.nodeValue
+        #         }
+        #         conditionsItems.append(conditionsRow)
+        #=======================================================================
 
 #         foreach my $item (@{$data->{channel}->{item}}) {
 #             if ( $item->{'ots:resort_id'} == $onthesnowId ) {
 
         for line in reversed(lines) :
             words = line.strip().split()
-            if len(words) > 10:
+            if len(words) > 9:
                 columns = item["nwac"]["columns"]
                 for key in columns:
                     conditionsRow = {
@@ -266,8 +270,13 @@ while ( 1 ):
                      "header": pass_json["RestrictionTwo"]["TravelDirection"],
                      "text": pass_json["RestrictionTwo"]["RestrictionText"]
                     }
+                    
                 ]
-                
+                if ("traffic_cam" in item):
+                    traffic_cam = {
+                     "icon": item["traffic_cam"]
+                    }
+                    body.append(traffic_cam)
 
                 trafficHash = {
                     "title": "Roads",
