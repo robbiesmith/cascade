@@ -274,7 +274,8 @@ while ( 1 ):
                 ]
                 if ("traffic_cam" in item):
                     traffic_cam = {
-                     "icon": item["traffic_cam"]
+                     "icon": item["traffic_cam"],
+                     "maxHeight": 250
                     }
                     body.append(traffic_cam)
 
